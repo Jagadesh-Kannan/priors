@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  primaryKey,
   integer,
   numeric,
   pgEnum,
@@ -56,8 +57,12 @@ export const stores = pgTable("stores", {
   chain: chain("chain").notNull(),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  // Label for filters and chips, e.g. "Tyvola" or "Lowe's".
+  shortName: text("short_name"),
   isOnline: boolean("is_online").notNull().default(false),
   isPrimary: boolean("is_primary").notNull().default(false),
+  // Stores a watch list item can be tagged with (Costco.com is a price source only).
+  shoppable: boolean("shoppable").notNull().default(false),
   latitude: numeric("latitude", { precision: 9, scale: 6 }),
   longitude: numeric("longitude", { precision: 9, scale: 6 }),
   geofenceRadiusM: integer("geofence_radius_m"),
@@ -90,10 +95,27 @@ export const watchListItems = pgTable(
     name: text("name").notNull(),
     productId: uuid("product_id").references(() => products.id),
     refillStatus: refillStatus("refill_status").notNull().default("ok"),
+    // Storage pathname (Vercel Blob, or .uploads/ in dev), served via /photos/.
+    photoPath: text("photo_path"),
     addedBy: uuid("added_by").references(() => users.id),
     createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("watch_list_items_household_idx").on(t.householdId)],
+);
+
+// Where a watch list item is bought; drives the store filter and, later, arrival lists.
+export const watchListItemStores = pgTable(
+  "watch_list_item_stores",
+  {
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => watchListItems.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+  },
+  (t) => [primaryKey({ columns: [t.itemId, t.storeId] })],
 );
 
 export const receipts = pgTable("receipts", {
@@ -143,7 +165,9 @@ export const alerts = pgTable(
     householdId: uuid("household_id")
       .notNull()
       .references(() => households.id),
-    watchListItemId: uuid("watch_list_item_id").references(() => watchListItems.id),
+    watchListItemId: uuid("watch_list_item_id").references(() => watchListItems.id, {
+      onDelete: "set null",
+    }),
     priceObservationId: uuid("price_observation_id").references(() => priceObservations.id),
     kind: alertKind("kind").notNull(),
     message: text("message").notNull(),

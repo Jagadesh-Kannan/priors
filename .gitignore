@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 !.env.example
+
+# local photo storage when BLOB_READ_WRITE_TOKEN is unset
+/.uploads

@@ -6,6 +6,9 @@
   --surface: #eef5f1;
   --accent: #1f6f50;
   --error: #b3261e;
+  --status-ok: #1f6f50;
+  --status-low: #b26a00;
+  --status-need: #b3261e;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -17,6 +20,9 @@
     --surface: #1b2621;
     --accent: #3fa57a;
     --error: #f2b8b5;
+    --status-ok: #2e8b63;
+    --status-low: #a86400;
+    --status-need: #c0392b;
   }
 }
 

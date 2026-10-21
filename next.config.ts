@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Photos are resized in the browser first; this leaves headroom for multipart overhead.
+    serverActions: { bodySizeLimit: "3mb" },
+  },
   async headers() {
     return [
       {

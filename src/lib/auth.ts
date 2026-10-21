@@ -12,11 +12,7 @@ export type User = {
   householdName: string;
 };
 
-export async function getCurrentUser(): Promise<User> {
-  "use cache: private";
-  const { userId } = await getSession();
-  if (!userId) redirect("/login");
-
+async function findUser(userId: string): Promise<User | undefined> {
   const [row] = await db
     .select({
       id: users.id,
@@ -27,7 +23,22 @@ export async function getCurrentUser(): Promise<User> {
     .from(users)
     .innerJoin(households, eq(users.householdId, households.id))
     .where(eq(users.id, userId));
-
-  if (!row) redirect("/login");
   return row;
+}
+
+// For pages: cached per browser session, redirects to /login when signed out.
+export async function getCurrentUser(): Promise<User> {
+  "use cache: private";
+  const { userId } = await getSession();
+  if (!userId) redirect("/login");
+  const user = await findUser(userId);
+  if (!user) redirect("/login");
+  return user;
+}
+
+// For Server Actions and Route Handlers, which must verify the session themselves.
+export async function getSessionUser(): Promise<User | null> {
+  const { userId } = await getSession();
+  if (!userId) return null;
+  return (await findUser(userId)) ?? null;
 }
